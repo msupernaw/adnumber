@@ -1,7 +1,6 @@
-
 /*!
- *  Software to compute derivatives. Support for forward, reverse, partial, 
- *  nth, and nth partial derivatives.
+ *  Software to compute derivatives. Support for nth partial and mixed 
+ *  derivatives, and mixed derivatives.
  */
 
 /*!
