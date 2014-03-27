@@ -18,9 +18,15 @@
 namespace ad {
 
     static int SetRuntimeStackLimit(uint32_t limit_mb = 32) {
+        int result = 0;
+#if defined(WIN32) || defined(WIN64)
+//
+
+#else
+
         const rlim_t kStackSize = limit_mb * 1024L * 1024L; // min stack size = 64 Mb
         struct rlimit rl;
-        int result;
+
 
         result = getrlimit(RLIMIT_STACK, &rl);
 
@@ -43,6 +49,8 @@ namespace ad {
                 }
             }
         }
+
+#endif
         return result;
     }
 
@@ -179,12 +187,12 @@ namespace ad {
         }
 
         virtual ~ADNumber() {
-            if(ADNumber<T>::IsRecordingExpression()){
-                 expression->release();
-            }else{
+            if (ADNumber<T>::IsRecordingExpression()) {
+                expression->release();
+            } else {
                 delete this->expression;
             }
-           
+
         }
 
         operator T&() {
