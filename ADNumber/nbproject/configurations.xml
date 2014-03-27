@@ -14,6 +14,13 @@
                    projectFiles="true">
       <itemPath>main.cpp</itemPath>
     </logicalFolder>
+    <logicalFolder name="util" displayName="util" projectFiles="true">
+      <itemPath>/Users/matthewsupernaw/NetBeansProjects/adnumber/util/Allocators.hpp</itemPath>
+      <itemPath>/Users/matthewsupernaw/NetBeansProjects/adnumber/util/Expression.hpp</itemPath>
+      <itemPath>/Users/matthewsupernaw/NetBeansProjects/adnumber/util/Pool.hpp</itemPath>
+      <itemPath>/Users/matthewsupernaw/NetBeansProjects/adnumber/util/Stack.hpp</itemPath>
+      <itemPath>/Users/matthewsupernaw/NetBeansProjects/adnumber/util/clfmalloc.h</itemPath>
+    </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"
                    projectFiles="false"
@@ -25,7 +32,12 @@
                    kind="IMPORTANT_FILES_FOLDER">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
+    <itemPath>/Users/matthewsupernaw/NetBeansProjects/adnumber/ADNumber.hpp</itemPath>
+    <itemPath>/Users/matthewsupernaw/NetBeansProjects/adnumber/clfmalloc.h</itemPath>
   </logicalFolder>
+  <sourceRootList>
+    <Elem>/Users/matthewsupernaw/NetBeansProjects/adnumber/util</Elem>
+  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="Debug" type="1">
