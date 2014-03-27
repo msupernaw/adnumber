@@ -88,7 +88,7 @@ namespace ad {
 #ifdef USE_POOL
         static Pool<Expression<T> > pool_m;
 #endif
-        //        std::string name_m;
+        std::string name_m;
         T value_m;
         ExpressionPtr left_m;
         ExpressionPtr right_m;
@@ -408,11 +408,11 @@ namespace ad {
                     if (this->left_m) {
                         ret->left_m->left_m->left_m = this->left_m->Differentiate(id);
                     }
-                    ret->left_m->left_m->right_m = this->right_m;//->Clone();
+                    ret->left_m->left_m->right_m = this->right_m; //->Clone();
 
                     ret->left_m->right_m = new Expression<T > (); //g(x)h'(x)
                     ret->left_m->right_m->op_m = MULTIPLY;
-                    ret->left_m->right_m->left_m = this->left_m;//->Clone();
+                    ret->left_m->right_m->left_m = this->left_m; //->Clone();
                     if (this->right_m) {
                         ret->left_m->right_m->right_m = this->right_m->Differentiate(id);
                     }
@@ -420,8 +420,8 @@ namespace ad {
 
                     ret->right_m = new Expression<T > ();
                     ret->right_m->op_m = MULTIPLY;
-                    ret->right_m->left_m = this->right_m;//->Clone();
-                    ret->right_m->right_m = this->right_m;//->Clone();
+                    ret->right_m->left_m = this->right_m; //->Clone();
+                    ret->right_m->right_m = this->right_m; //->Clone();
 
 
                     return ret;
@@ -434,7 +434,7 @@ namespace ad {
                             && this->right_m->op_m != CONSTANT) {
                         ret->op_m = MULTIPLY;
                         if (this->left_m) {
-                            ret->left_m = this->left_m;//->Clone();
+                            ret->left_m = this->left_m; //->Clone();
                         }
                         if (this->right_m) {
                             ret->right_m = this->right_m->Differentiate(id);
@@ -448,7 +448,7 @@ namespace ad {
                             ret->left_m = this->left_m->Differentiate(id);
                         }
                         if (this->right_m) {
-                            ret->right_m = this->right_m;//->Clone();
+                            ret->right_m = this->right_m; //->Clone();
                         }
                     } else {
 
@@ -459,7 +459,7 @@ namespace ad {
                         ret->left_m = new Expression<T > ();
                         ret->left_m->op_m = MULTIPLY;
 
-                        ret->left_m->right_m = this->right_m;//->Clone();
+                        ret->left_m->right_m = this->right_m; //->Clone();
 
                         if (this->right_m != NULL) {
                             ret->left_m->left_m = this->left_m->Differentiate(id);
@@ -467,7 +467,7 @@ namespace ad {
                         ret->right_m = new Expression<T > ();
                         ret->right_m->op_m = MULTIPLY;
 
-                        ret->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m = this->left_m; //->Clone();
                         if (this->left_m != NULL) {
                             ret->right_m->right_m = this->right_m->Differentiate(id);
                         }
@@ -486,7 +486,7 @@ namespace ad {
                         ret->left_m = this->left_m->Differentiate(id);
                         ret->right_m = new Expression<T > ();
                         ret->right_m->op_m = COS;
-                        ret->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m = this->left_m; //->Clone();
 
                         return ret;
                     } else {
@@ -514,7 +514,7 @@ namespace ad {
 
                         ret->right_m->right_m = new Expression<T > ();
                         ret->right_m->right_m->op_m = SIN;
-                        ret->right_m->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->right_m->left_m = this->left_m; //->Clone();
 
 
                         return ret;
@@ -548,7 +548,7 @@ namespace ad {
 
                         ret->right_m->left_m->right_m = new Expression<T > ();
                         ret->right_m->left_m->right_m->op_m = COS;
-                        ret->right_m->left_m->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m->right_m->left_m = this->left_m; //->Clone();
 
 
                         ret->right_m->right_m = new Expression<T > ();
@@ -562,7 +562,7 @@ namespace ad {
 
                         ret->right_m->right_m->right_m = new Expression<T > ();
                         ret->right_m->right_m->right_m->op_m = COS;
-                        ret->right_m->right_m->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->right_m->right_m->left_m = this->left_m; //->Clone();
 
 
                         return ret;
@@ -602,7 +602,7 @@ namespace ad {
 
                         ret->right_m->right_m->left_m->right_m = new Expression<T > ();
                         ret->right_m->right_m->left_m->right_m->op_m = POW;
-                        ret->right_m->right_m->left_m->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->right_m->left_m->right_m->left_m = this->left_m; //->Clone();
 
                         ret->right_m->right_m->left_m->right_m->right_m = new Expression<T > ();
                         ret->right_m->right_m->left_m->right_m->right_m->op_m = CONSTANT;
@@ -656,7 +656,7 @@ namespace ad {
 
                         ret->right_m->right_m->left_m->right_m = new Expression<T > ();
                         ret->right_m->right_m->left_m->right_m->op_m = POW;
-                        ret->right_m->right_m->left_m->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->right_m->left_m->right_m->left_m = this->left_m; //->Clone();
 
                         ret->right_m->right_m->left_m->right_m->right_m = new Expression<T > ();
                         ret->right_m->right_m->left_m->right_m->right_m->op_m = CONSTANT;
@@ -695,8 +695,8 @@ namespace ad {
 
                         ret->right_m->left_m = new Expression<T > ();
                         ret->right_m->left_m->op_m = MULTIPLY;
-                        ret->right_m->left_m->left_m = this->left_m;//->Clone();
-                        ret->right_m->left_m->right_m = this->left_m;//->Clone();
+                        ret->right_m->left_m->left_m = this->left_m; //->Clone();
+                        ret->right_m->left_m->right_m = this->left_m; //->Clone();
 
 
                         ret->right_m->right_m = new Expression<T > ();
@@ -722,7 +722,7 @@ namespace ad {
                         ret->op_m = DIVIDE;
                         ret->left_m = new Expression<T > ();
                         ret->left_m->op_m = MULTIPLY;
-                        ret->left_m->left_m = this->right_m;//->Clone(); //y
+                        ret->left_m->left_m = this->right_m; //->Clone(); //y
                         ret->left_m->right_m = left_m->Differentiate(id);
 
 
@@ -731,14 +731,14 @@ namespace ad {
 
                         ret->right_m->left_m = new Expression<T > ();
                         ret->right_m->left_m->op_m = MULTIPLY;
-                        ret->right_m->left_m->left_m = this->left_m;//->Clone();
-                        ret->right_m->left_m->right_m = this->left_m;//->Clone();
+                        ret->right_m->left_m->left_m = this->left_m; //->Clone();
+                        ret->right_m->left_m->right_m = this->left_m; //->Clone();
 
 
                         ret->right_m->right_m = new Expression<T > ();
                         ret->right_m->right_m->op_m = MULTIPLY;
-                        ret->right_m->right_m->left_m = this->right_m;//->Clone();
-                        ret->right_m->right_m->right_m = this->right_m;//->Clone();
+                        ret->right_m->right_m->left_m = this->right_m; //->Clone();
+                        ret->right_m->right_m->right_m = this->right_m; //->Clone();
 
 
                         return ret;
@@ -773,7 +773,7 @@ namespace ad {
 
                         ret->right_m = new Expression<T > ();
                         ret->right_m->op_m = SQRT;
-                        ret->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m = this->left_m; //->Clone();
 
                         //std::cout<<ret->ToString();
 
@@ -796,7 +796,7 @@ namespace ad {
                         ret->left_m = new Expression<T > ();
                         ret->left_m->op_m = MULTIPLY;
                         ret->left_m->left_m = this->left_m->Differentiate(id);
-                        ret->left_m->right_m = this->right_m;//->Clone();
+                        ret->left_m->right_m = this->right_m; //->Clone();
 
 
 
@@ -804,12 +804,12 @@ namespace ad {
                         ret->right_m->op_m = POW;
 
 
-                        ret->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m = this->left_m; //->Clone();
 
 
                         ret->right_m->right_m = new Expression<T > ();
                         ret->right_m->right_m->op_m = MINUS;
-                        ret->right_m->right_m->left_m = this->right_m;//->Clone();
+                        ret->right_m->right_m->left_m = this->right_m; //->Clone();
 
                         ret->right_m->right_m->right_m = new Expression<T > ();
                         ret->right_m->right_m->right_m->op_m = CONSTANT;
@@ -845,7 +845,7 @@ namespace ad {
                         ret->left_m->left_m->value_m = T(1.0);
                         ret->left_m->right_m = this->left_m->Differentiate(id);
 
-                        ret->right_m = this->left_m;//->Clone();
+                        ret->right_m = this->left_m; //->Clone();
 
 
 
@@ -879,7 +879,7 @@ namespace ad {
                         ret->right_m = new Expression<T > ();
                         ret->right_m->op_m = MULTIPLY;
 
-                        ret->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m = this->left_m; //->Clone();
 
                         ret->right_m->right_m = new Expression<T > ();
                         ret->right_m->right_m->op_m = CONSTANT;
@@ -889,7 +889,7 @@ namespace ad {
                         return ret;
                     } else {
                         ret->op_m = LOG;
-                        ret->left_m = this;//->Clone();
+                        ret->left_m = this; //->Clone();
 
 
                         return ret;
@@ -906,7 +906,7 @@ namespace ad {
 
                         ret->right_m = new Expression<T > ();
                         ret->right_m->op_m = EXP;
-                        ret->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m = this->left_m; //->Clone();
 
 
 
@@ -928,7 +928,7 @@ namespace ad {
 
                         ret->right_m = new Expression<T > ();
                         ret->right_m->op_m = COSH;
-                        ret->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m = this->left_m; //->Clone();
 
 
                         return ret;
@@ -947,7 +947,7 @@ namespace ad {
 
                         ret->right_m = new Expression<T > ();
                         ret->right_m->op_m = SINH;
-                        ret->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m = this->left_m; //->Clone();
 
 
                         return ret;
@@ -982,10 +982,10 @@ namespace ad {
 
                         ret->right_m->left_m->right_m = new Expression<T > ();
                         ret->right_m->left_m->right_m->op_m = COSH;
-                        ret->right_m->left_m->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m->right_m->left_m = this->left_m; //->Clone();
 
 
-                        ret->right_m->right_m = ret->right_m->left_m;//->Clone();
+                        ret->right_m->right_m = ret->right_m->left_m; //->Clone();
 
 
                         return ret;
@@ -1006,12 +1006,12 @@ namespace ad {
                         ret->left_m->op_m = MULTIPLY;
 
                         ret->left_m->left_m = this->left_m->Differentiate(id);
-                        ret->left_m->right_m = this->left_m;//->Clone();;
+                        ret->left_m->right_m = this->left_m; //->Clone();;
 
 
                         ret->right_m = new Expression<T > ();
                         ret->right_m->op_m = FABS;
-                        ret->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m = this->left_m; //->Clone();
 
 
                         return ret;
@@ -1033,7 +1033,7 @@ namespace ad {
 
                         ret->right_m = new Expression<T > ();
                         ret->right_m->op_m = FLOOR;
-                        ret->right_m->left_m = this->left_m;//->Clone();
+                        ret->right_m->left_m = this->left_m; //->Clone();
 
 
                         return ret;
@@ -1045,7 +1045,7 @@ namespace ad {
                         return ret;
                     }
                 case NONE://shouldn't happen.
-                    return this;//->Clone();
+                    return this; //->Clone();
 
                 default:
                     return NULL;
@@ -1173,7 +1173,7 @@ namespace ad {
             //#warning need to check partial derivatives....
 
             T ret, g, h = T(-999.0);
-       
+
             T left_derivative = T(0);
             T right_derivative = T(0);
 
@@ -1214,7 +1214,7 @@ namespace ad {
                     //f'(x) = g'(x) - h'(x)
 
 
-                    return left_derivative -right_derivative;
+                    return left_derivative - right_derivative;
 
                 case PLUS:
 
@@ -1251,12 +1251,12 @@ namespace ad {
                     } else if (this->right_m->op_m == CONSTANT
                             && this->left_m->op_m != CONSTANT) {
 
-                        ret = left_derivative  * this->right_m->Evaluate();
+                        ret = left_derivative * this->right_m->Evaluate();
                     } else {
 
                         //g'(x)h(x) + g(x)h'(x)
 
-                        ret = left_derivative  * this->right_m->Evaluate() +
+                        ret = left_derivative * this->right_m->Evaluate() +
                                 this->left_m->Evaluate() * right_derivative;
 
 
@@ -1267,7 +1267,7 @@ namespace ad {
 
                     if (has_id) {
                         //f'(x) = cos(x)
-                        ret = left_derivative  *
+                        ret = left_derivative *
                                 std::cos(this->left_m->Evaluate());
 
                         return ret;
@@ -1280,7 +1280,7 @@ namespace ad {
                         //f'(x) = -sin(x)
 
 
-                        g = left_derivative ;
+                        g = left_derivative;
 
                         ret = g * T(-1.0) * std::sin(this->left_m->Evaluate());
 
@@ -1295,7 +1295,7 @@ namespace ad {
                         //f'(x) = 1/cos(x)
 
 
-                        g = left_derivative ;
+                        g = left_derivative;
 
                         ret = g * ((T(1.0) / std::cos(this->left_m->Evaluate()))*(T(1.0) / std::cos(this->left_m->Evaluate())));
 
@@ -1314,7 +1314,7 @@ namespace ad {
                         //f'(x) = 1/(2 sqrt(1-x^2)= 1/(pow((1-pow(x,2)),0.5)
 
 
-                        g = left_derivative ;
+                        g = left_derivative;
 
                         ret = (g * T(1.0) / std::pow((T(1.0) - std::pow(this->left_m->Evaluate(), T(2.0))), T(0.5)));
 
@@ -1325,7 +1325,7 @@ namespace ad {
                 case ACOS:
 
                     if (has_id) {
-                        g = left_derivative ;
+                        g = left_derivative;
 
                         ret = (g * T(-1.0) / std::pow((T(1.0) - std::pow(this->left_m->Evaluate(), T(2.0))), T(0.5)));
 
@@ -1336,7 +1336,7 @@ namespace ad {
                     }
                 case ATAN:
                     if (has_id) {
-                        g = left_derivative ;
+                        g = left_derivative;
                         ret = (g * T(1.0) / (this->left_m->Evaluate() * this->left_m->Evaluate() + T(1.0)));
 
                         return ret;
@@ -1352,7 +1352,7 @@ namespace ad {
                         //f(x) = atan2(x,y)
                         //f'(x) y/(x^2+y^2)
 
-                        g = left_derivative ;
+                        g = left_derivative;
                         ret = (this->right_m->Evaluate() * g / (this->left_m->Evaluate() * this->left_m->Evaluate()+(this->right_m->Evaluate() * this->right_m->Evaluate())));
 
                         return ret;
@@ -1371,7 +1371,7 @@ namespace ad {
                     if (has_id) {
                         //f(x) = sqrt(x)
                         //f'(x) = .5/sqrt(x)
-                        g = left_derivative ;
+                        g = left_derivative;
                         ret = g * T(.5) / std::sqrt(this->left_m->Evaluate());
 
 
@@ -1397,7 +1397,7 @@ namespace ad {
                     if (has_id) {
                         //f(x) = log(x)
                         //f'(x) = 1/x
-                        ret = (left_derivative  * T(1.0)) / this->left_m->Evaluate();
+                        ret = (left_derivative * T(1.0)) / this->left_m->Evaluate();
 
                         return ret;
                     } else {
@@ -1410,7 +1410,7 @@ namespace ad {
 
                     if (has_id) {
 
-                        ret = (left_derivative  * T(1.0)) / (this->left_m->Evaluate() * std::log(T(10.0)));
+                        ret = (left_derivative * T(1.0)) / (this->left_m->Evaluate() * std::log(T(10.0)));
 
                         return ret;
                     } else {
@@ -1421,7 +1421,7 @@ namespace ad {
                     //f'(x) =e^x
 
                     if (has_id) {
-                        ret = left_derivative  * std::exp(this->left_m->Evaluate());
+                        ret = left_derivative * std::exp(this->left_m->Evaluate());
 
                         return ret;
                     } else {
@@ -1432,7 +1432,7 @@ namespace ad {
                     if (has_id) {
                         //f(x) = sinh(x)
                         //f'(x) = cosh(x)
-                        return left_derivative  * std::cosh(this->left_m->Evaluate());
+                        return left_derivative * std::cosh(this->left_m->Evaluate());
 
                         return ret;
                     } else {
@@ -1441,7 +1441,7 @@ namespace ad {
                     }
                 case COSH:
                     if (has_id) {
-                        return left_derivative  * std::sinh(this->left_m->Evaluate());
+                        return left_derivative * std::sinh(this->left_m->Evaluate());
 
                         return ret;
                     } else {
@@ -1455,7 +1455,7 @@ namespace ad {
 
                     if (has_id) {
 
-                        ret = left_derivative *(T(1.0) / std::cosh(this->left_m->Evaluate()))*(T(1.0) / std::cosh(this->left_m->Evaluate()));
+                        ret = left_derivative * (T(1.0) / std::cosh(this->left_m->Evaluate()))*(T(1.0) / std::cosh(this->left_m->Evaluate()));
 
 
                         return ret;
@@ -1468,7 +1468,7 @@ namespace ad {
 
                     if (has_id) {
 
-                        ret = (left_derivative  * this->left_m->Evaluate()) /
+                        ret = (left_derivative * this->left_m->Evaluate()) /
                                 std::fabs(this->left_m->Evaluate());
 
                         return ret;
@@ -1479,7 +1479,7 @@ namespace ad {
                 case FLOOR:
                     if (has_id) {
 
-                        ret = left_derivative  * std::floor(this->left_m->Evaluate());
+                        ret = left_derivative * std::floor(this->left_m->Evaluate());
 
                         return ret;
                     } else {
@@ -1520,13 +1520,13 @@ namespace ad {
         }
 
         virtual const std::string GetName() const {
-            return "";
-            //            if (name_m == "") {
-            //                std::stringstream ss;
-            //                ss << "x" << GetId();
-            //                return ss.str();
-            //            }
-            //            return name_m;
+
+            if (name_m == "") {
+                std::stringstream ss;
+                ss << "x" << GetId();
+                return ss.str();
+            }
+            return name_m;
         }
 
         virtual void SetName(const std::string &name) {
