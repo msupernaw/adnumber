@@ -18,15 +18,9 @@
 namespace ad {
 
     static int SetRuntimeStackLimit(uint32_t limit_mb = 32) {
-        int result = 0;
-#if defined(WIN32) || defined(WIN64)
-//
-
-#else
-
         const rlim_t kStackSize = limit_mb * 1024L * 1024L; // min stack size = 64 Mb
         struct rlimit rl;
-
+        int result;
 
         result = getrlimit(RLIMIT_STACK, &rl);
 
@@ -49,8 +43,6 @@ namespace ad {
                 }
             }
         }
-
-#endif
         return result;
     }
 
@@ -142,6 +134,7 @@ namespace ad {
         id(IDGenerator::instance()->next()) {
             expression->take();
             expression->SetId(id);
+            expression->SetValue(value);
         }
 
         /*!
@@ -187,12 +180,12 @@ namespace ad {
         }
 
         virtual ~ADNumber() {
-            if (ADNumber<T>::IsRecordingExpression()) {
-                expression->release();
-            } else {
+            if(ADNumber<T>::IsRecordingExpression()){
+                 expression->release();
+            }else{
                 delete this->expression;
             }
-
+           
         }
 
         operator T&() {
@@ -234,9 +227,10 @@ namespace ad {
                 if (this->expression != NULL) {
                     this->expression->release();
                 }
-                //            ExpressionPtr exp = expression;
+//                           ExpressionPtr exp = expression;
 
                 val.GetExpression()->take();
+                this->id = val.GetID();
                 expression = val.GetExpression();
                 //            expression->take();
 
@@ -255,17 +249,24 @@ namespace ad {
          */
         ADNumber<T> & operator =(const T & val) {
             value = val;
+            
             if (ADNumber<T>::IsRecordingExpression()) {
-                this->expression->release();
+            
+                
                 if (expression->GetLeft() != NULL) {
                     expression->GetLeft()->release();
+                    expression->SetLeft(NULL);
                 }
                 if (expression->GetRight() != NULL) {
                     expression->GetRight()->release();
+                     expression->SetRight(NULL);
                 }
-                expression->SetLeft(NULL);
-                expression->SetRight(NULL);
-                expression->SetValue(val);
+                
+                this->expression->release();
+                this->SetValue(value);
+                this->expression = NEW_EXPRESSION(T);
+                this->Initialize();
+                
             } else {
                 this->SetValue(value);
             }
@@ -1710,6 +1711,31 @@ namespace ad {
             return ad::Derivative(ret, var20, 1);
         }
 
+//        
+//        /*!
+//         * Returns sqrt(sum a = A,B { (df/da)^2*u(a)^2}), where u(a) is 
+//         * round error.
+//         * 
+//         **/
+//        const T GetUncertainty(const std::vector<ADNumber<T> >&vars) {
+//           
+//    
+//
+//
+//            T temp = T(0);
+//            T squared_epsilon = std::numeric_limits<T>::epsilon() * std::numeric_limits<T>::epsilon();
+//            T dif;
+//            
+//            for(int i =0; i < vars.size(); i++){
+//            
+//                dif = ad::EvaluateDerivative<T>(this->GetExpression(), vars[i].GetID());
+//                temp += dif * dif * squared_epsilon;
+//            }
+//            return std::sqrt(temp);
+//
+//        }
+
+        
         const T NthPartialValue(const ADNumber<T> &wrt, unsigned int order) {
             return ad::DerivativeValue<T > (*this, wrt, order);
         }
