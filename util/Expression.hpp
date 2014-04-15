@@ -22,8 +22,8 @@
 #include "Stack.hpp"
 
 
-#define USE_POOL
-
+#define USE_CLFMALLOC
+//#define USE_POOL
 #ifdef USE_POOL
 
 #ifndef DEFAULT_POOL_SIZE
@@ -125,7 +125,7 @@ namespace ad {
         : right_m(right),
         left_m(left),
         op_m(op),
-        //        name_m(name),
+        name_m(name),
         id_m(id),
         value_m(value),
         count_m(0) {
@@ -2348,7 +2348,7 @@ namespace ad {
                     stack.pop();
                     lhs = stack.top();
                     stack.pop();
-                    temp = (lhs.second * rhs.first + lhs.first * rhs.second) / (rhs.first * rhs.first);
+                    temp = (lhs.second * rhs.first - lhs.first * rhs.second) / (rhs.first * rhs.first);
                     stack.push(std::pair<T, T > (lhs.first / rhs.first, temp));
                     // ret = temp;
                     break;
@@ -2573,10 +2573,19 @@ namespace ad {
 
     }
 
+    /**
+     * Returns an expression representing the derivative of the input expression
+     * w.r.t id.
+     * 
+     * note: Return expression is already taken once. 
+     * @param exp
+     * @param id
+     * @return 
+     */
     template<class T>
     static ad::Expression<T>* Differentiate(ad::Expression<T>* exp, unsigned long id = 0) {
         std::deque<std::pair<ad::Expression<T>*, ad::Expression<T>*> > stack;
-
+        std::vector < ad::Expression<T>* > temps;
         ad::PostOrderIterator<T> it(exp);
 
         bool found = false;
@@ -2598,7 +2607,9 @@ namespace ad {
                     temp = new ad::Expression<T > ();
                     temp->SetValue(0.0);
                     temp->SetOp(ad::VARIABLE);
-                    //temp->take();
+                    temp->take();
+                    temps.push_back(temp);
+
                     stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     break;
                 case ad::VARIABLE:
@@ -2609,7 +2620,8 @@ namespace ad {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(1.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {//constant
                         //f(x) = C
@@ -2617,7 +2629,10 @@ namespace ad {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
                     break;
@@ -2629,9 +2644,11 @@ namespace ad {
 
                     temp = new ad::Expression<T > ();
                     temp->SetOp(ad::PLUS);
-                    temp->SetLeft(ad::Clone(lhs.second));
-                    temp->SetRight(ad::Clone(rhs.second));
-                    //temp->take();
+                    temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
+                    temp->SetRight(rhs.second/*ad::Clone(rhs.second)*/);
+                    temp->take();
+                    temps.push_back(temp);
+
                     stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     break;
                 case ad::MINUS:
@@ -2642,9 +2659,11 @@ namespace ad {
 
                     temp = new ad::Expression<T > ();
                     temp->SetOp(ad::MINUS);
-                    temp->SetLeft(ad::Clone(lhs.second));
-                    temp->SetRight(ad::Clone(rhs.second));
-                    //temp->take();
+                    temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
+                    temp->SetRight(rhs.second/*ad::Clone(rhs.second)*/);
+                    temp->take();
+                    temps.push_back(temp);
+
                     stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     break;
                 case ad::MULTIPLY:
@@ -2656,15 +2675,17 @@ namespace ad {
                     temp->SetOp(ad::PLUS);
                     temp->SetLeft(new ad::Expression<T > ());
                     temp->GetLeft()->SetOp(ad::MULTIPLY);
-                    temp->GetLeft()->SetLeft(ad::Clone(lhs.second));
+                    temp->GetLeft()->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                     temp->GetLeft()->SetRight(rhs.first);
                     temp->SetRight(new ad::Expression<T > ());
 
                     temp->GetRight()->SetOp(ad::MULTIPLY);
                     temp->GetRight()->SetLeft(lhs.first);
-                    temp->GetRight()->SetRight(ad::Clone(rhs.second));
+                    temp->GetRight()->SetRight(rhs.second/*ad::Clone(rhs.second)*/);
 
-                    //temp->take();
+                    temp->take();
+                    temps.push_back(temp);
+
                     stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
 
                     break;
@@ -2679,20 +2700,22 @@ namespace ad {
                     temp->GetLeft()->SetOp(ad::PLUS);
                     temp->GetLeft()->SetLeft(new ad::Expression<T > ());
                     temp->GetLeft()->GetLeft()->SetOp(ad::MULTIPLY);
-                    temp->GetLeft()->GetLeft()->SetLeft(ad::Clone(lhs.second));
+                    temp->GetLeft()->GetLeft()->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                     temp->GetLeft()->GetLeft()->SetRight(rhs.first);
                     temp->GetLeft()->SetRight(new ad::Expression<T > ());
 
                     temp->GetLeft()->GetRight()->SetOp(ad::MULTIPLY);
                     temp->GetLeft()->GetRight()->SetLeft(lhs.first);
-                    temp->GetLeft()->GetRight()->SetRight(ad::Clone(rhs.second));
+                    temp->GetLeft()->GetRight()->SetRight(rhs.second/*ad::Clone(rhs.second)*/);
 
                     temp->SetRight(new ad::Expression<T > ());
                     temp->GetRight()->SetOp(ad::MULTIPLY);
                     temp->GetRight()->SetLeft(rhs.first);
-                    temp->GetRight()->SetRight(rhs.first);
+                    temp->GetRight()->SetRight(ad::Clone(rhs.first));
 
-                    //temp->take();
+                    temp->take();
+                    temps.push_back(temp);
+
                     stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
 
                     break;
@@ -2703,17 +2726,21 @@ namespace ad {
                     if (found) {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::COS);
                         temp->GetRight()->SetLeft(lhs.first);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
+
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
+
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -2731,20 +2758,24 @@ namespace ad {
                         temp->GetLeft()->SetLeft(new ad::Expression<T > ());
                         temp->GetLeft()->GetLeft()->SetOp(ad::CONSTANT);
                         temp->GetLeft()->GetLeft()->SetValue(-1.0);
-                        temp->GetLeft()->SetRight(ad::Clone(lhs.second));
+                        temp->GetLeft()->SetRight(lhs.second/*ad::Clone(lhs.second)*/);
 
 
 
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::SIN);
                         temp->GetRight()->SetLeft(lhs.first);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
+
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
+
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -2758,7 +2789,7 @@ namespace ad {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
 
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
 
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::MULTIPLY);
@@ -2773,13 +2804,16 @@ namespace ad {
 
                         temp->GetRight()->SetRight(ad::Clone(temp->GetRight()->GetLeft()));
 
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
+
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -2793,7 +2827,7 @@ namespace ad {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
 
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::DIVIDE);
                         temp->GetRight()->SetLeft(new ad::Expression<T > ());
@@ -2819,13 +2853,17 @@ namespace ad {
                         temp->GetRight()->GetRight()->GetRight()->SetOp(ad::CONSTANT);
                         temp->GetRight()->GetRight()->GetRight()->SetValue(0.5);
 
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
+
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
+
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -2838,7 +2876,7 @@ namespace ad {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
 
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::DIVIDE);
                         temp->GetRight()->SetLeft(new ad::Expression<T > ());
@@ -2864,13 +2902,15 @@ namespace ad {
                         temp->GetRight()->GetRight()->GetRight()->SetOp(ad::CONSTANT);
                         temp->GetRight()->GetRight()->GetRight()->SetValue(0.5);
 
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -2883,7 +2923,7 @@ namespace ad {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
 
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::DIVIDE);
                         temp->GetRight()->SetLeft(new ad::Expression<T > ());
@@ -2900,13 +2940,15 @@ namespace ad {
                         temp->GetRight()->GetRight()->GetRight()->SetOp(ad::CONSTANT);
                         temp->GetRight()->GetRight()->GetRight()->SetValue(1.0);
 
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -2924,10 +2966,10 @@ namespace ad {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
 
-                        temp->SetLeft(ad::Clone(ad::Clone(rhs.second)));
+                        temp->SetLeft(ad::Clone(rhs.second/*ad::Clone(rhs.second)*/));
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::DIVIDE);
-                        temp->GetRight()->SetLeft(ad::Clone(ad::Clone(lhs.second)));
+                        temp->GetRight()->SetLeft(ad::Clone(lhs.second/*ad::Clone(lhs.second)*/));
 
 
                         temp->GetRight()->SetRight(new ad::Expression<T > ());
@@ -2941,14 +2983,16 @@ namespace ad {
                         temp->GetRight()->GetRight()->GetRight()->SetLeft(ad::Clone(rhs.first));
                         temp->GetRight()->GetRight()->GetRight()->SetRight(ad::Clone(rhs.first));
 
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
 
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -2961,7 +3005,7 @@ namespace ad {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
 
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::DIVIDE);
                         temp->GetRight()->SetLeft(new ad::Expression<T > ());
@@ -2970,13 +3014,16 @@ namespace ad {
 
                         temp->GetRight()->SetRight(lhs.first);
 
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
+
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -2995,7 +3042,7 @@ namespace ad {
                         temp->SetOp(ad::MULTIPLY);
                         temp->SetLeft(new ad::Expression<T > ());
                         temp->GetLeft()->SetOp(ad::MULTIPLY);
-                        temp->GetLeft()->SetLeft(ad::Clone(lhs.second));
+                        temp->GetLeft()->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->GetLeft()->SetRight(rhs.first);
 
                         temp->SetRight(new ad::Expression<T > ());
@@ -3009,14 +3056,16 @@ namespace ad {
                         temp->GetRight()->GetRight()->GetRight()->SetOp(ad::CONSTANT);
                         temp->GetRight()->GetRight()->GetRight()->SetValue(1.0);
 
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
 
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -3031,16 +3080,18 @@ namespace ad {
                     if (found) {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::DIVIDE);
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->SetRight(lhs.first);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
 
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -3055,7 +3106,7 @@ namespace ad {
                     if (found) {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::DIVIDE);
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::MULTIPLY);
                         temp->GetRight()->SetLeft(lhs.first);
@@ -3066,14 +3117,16 @@ namespace ad {
                         temp->GetRight()->GetRight()->GetLeft()->SetValue(10.0);
 
 
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
 
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -3088,20 +3141,20 @@ namespace ad {
                     if (found) {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::EXP);
                         temp->GetRight()->SetLeft(lhs.first);
-
-
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
 
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -3116,20 +3169,20 @@ namespace ad {
                     if (found) {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::COSH);
                         temp->GetRight()->SetLeft(lhs.first);
-
-
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
 
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -3144,20 +3197,21 @@ namespace ad {
                     if (found) {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::SINH);
                         temp->GetRight()->SetLeft(lhs.first);
+                        temp->take();
+                        temps.push_back(temp);
 
-
-                        //temp->take();
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
 
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -3170,7 +3224,7 @@ namespace ad {
                         temp = new ad::Expression<T > ();
                         temp->SetOp(ad::MULTIPLY);
 
-                        temp->SetLeft(ad::Clone(lhs.second));
+                        temp->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
 
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::MULTIPLY);
@@ -3185,13 +3239,15 @@ namespace ad {
 
                         temp->GetRight()->SetRight(ad::Clone(temp->GetRight()->GetLeft()));
 
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -3205,20 +3261,20 @@ namespace ad {
                         temp->SetOp(ad::DIVIDE);
                         temp->SetLeft(new ad::Expression<T > ());
                         temp->GetLeft()->SetOp(ad::MULTIPLY);
-                        temp->GetLeft()->SetLeft(ad::Clone(lhs.second));
+                        temp->GetLeft()->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->GetLeft()->SetRight(lhs.first);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::FABS);
                         temp->GetRight()->SetLeft(lhs.first);
-
-
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -3232,20 +3288,20 @@ namespace ad {
                         temp->SetOp(ad::DIVIDE);
                         temp->SetLeft(new ad::Expression<T > ());
                         temp->GetLeft()->SetOp(ad::MULTIPLY);
-                        temp->GetLeft()->SetLeft(ad::Clone(lhs.second));
+                        temp->GetLeft()->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
                         temp->GetLeft()->SetRight(lhs.first);
                         temp->SetRight(new ad::Expression<T > ());
                         temp->GetRight()->SetOp(ad::FABS);
                         temp->GetRight()->SetLeft(lhs.first);
-
-
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     } else {
                         temp = new ad::Expression<T > ();
                         temp->SetValue(0.0);
                         temp->SetOp(ad::VARIABLE);
-                        //temp->take();
+                        temp->take();
+                        temps.push_back(temp);
                         stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
                     }
 
@@ -3258,7 +3314,8 @@ namespace ad {
                     temp = new ad::Expression<T > ();
                     temp->SetValue(0.0);
                     temp->SetOp(ad::VARIABLE);
-                    //temp->take();
+                    temp->take();
+                    temps.push_back(temp);
                     stack.push_front(std::pair<ad::Expression<T>*, ad::Expression<T>*> (currNode, temp));
 
 
@@ -3273,15 +3330,21 @@ namespace ad {
             it++;
         }
 
-        for (int i = 0; i < stack.size(); i++) {
-            //            if(stack[i].second->References() <1){
-            std::cout << stack[i].second->References() << "references...\n";
-            //                std::cout<<stack[i].second->ToString(true)<<"\n\n\n";
-            //            }
+        ad::Expression<T>* ret = stack.front().second;
+        for (int i = 0; i < temps.size()-1; i++) {
+
+            if (temps[i] != ret) {
+                temps[i]->release();
+            }
+            //            
+            //            //            if(stack[i].second->References() <1){
+            //            std::cout << temps[i]->References() << "references...\n";
+            //            //                std::cout<<stack[i].second->ToString(true)<<"\n\n\n";
+            //            //            }
         }
 
 
-        return stack.front().second;
+        return ret;
 
 
     }
