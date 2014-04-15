@@ -2697,7 +2697,7 @@ namespace ad {
                     temp = new ad::Expression<T > ();
                     temp->SetOp(ad::DIVIDE);
                     temp->SetLeft(new ad::Expression<T > ());
-                    temp->GetLeft()->SetOp(ad::PLUS);
+                    temp->GetLeft()->SetOp(ad::MINUS);
                     temp->GetLeft()->SetLeft(new ad::Expression<T > ());
                     temp->GetLeft()->GetLeft()->SetOp(ad::MULTIPLY);
                     temp->GetLeft()->GetLeft()->SetLeft(lhs.second/*ad::Clone(lhs.second)*/);
