@@ -1,61 +1,9 @@
-
-/*!
- *  Software to compute derivatives. 
- */
-
-/*!
- *   This library is dual-licensed: you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version <N> as 
- *   published by the Free Software Foundation. For the terms of this 
- *   license, see licenses/gpl_v3.txt or <http://www.gnu.org/licenses/>.
- *
- *   You are free to use this library under the terms of the GNU General
- *   Public License, but WITHOUT ANY WARRANTY; without even the implied 
- *   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *   See the GNU General Public License for more details.
- *
- *  Alternatively, you can license this library under a commercial
- *  license.
- *
- *               ADNumber Commercial License(ACL)
- *               ================================
- * ---------------------------------------------------------------------
- * 
- *  The license is non-exclusively granted to a single person or company,
- *  per payment of the license fee, for the lifetime of that person or
- *  company. The license is non-transferrable.
- * 
- *  The ACL grants the licensee the right to use ADNumber in commercial
- *  closed-source projects. Modifications may be made to ADNumber with no
- *  obligation to release the modified source code. ADNumber (or pieces
- *  thereof) may be included in any number of projects authored (in whole
- *  or in part) by the licensee.
- * 
- *  The licensee may use any version of ADNumber, past, present or future,
- *  as is most convenient. This license does not entitle the licensee to
- *  receive any technical support, updates or bug fixes, except as such are
- *  made publicly available to all ADNumber users.
- * 
- *  The licensee may not sub-license ADNumber itself, meaning that any
- *  commercially released product containing all or parts of ADNumber must
- *  have added functionality beyond what is available in ADNumber;
- *  ADNumber itself may not be re-licensed by the licensee.
- * 
- *  To obtain a commercial license agreement, contact:
- * 
- *  Matthew Supernaw
- *  msupernaw@gmail.com
- * 
- */
-
-/*!
- *
+/* 
  * File:   ADNumber.hpp
- * Author: Matthew R. Supernaw
+ * Author: matthewsupernaw
  *
- * Created on January 4, 2012, 7:08 PM
+ * Created on March 20, 2014, 12:03 PM
  */
-
 
 #ifndef ADNUMBER_HPP
 #define	ADNUMBER_HPP
@@ -146,6 +94,9 @@ namespace ad {
         unsigned long id;
         Expression<T>* expression;
         static bool record_expressoion;
+        bool bounded;
+        T min_boundary;
+        T max_boundary;
     public:
 
         /*!
@@ -153,10 +104,12 @@ namespace ad {
          */
         ADNumber() :
         expression(new Expression<T>()),
-        value(T(0.0)),
-        //name(std::string("na")),
+        value(T(0.0)), bounded(false),
+        min_boundary(std::numeric_limits<T>::min()),
+        max_boundary(std::numeric_limits<T>::max()),
+        name(std::string("")),
         id(IDGenerator::instance()->next()) {
-
+            this->SetName("");
             Initialize();
         }
 
@@ -167,10 +120,12 @@ namespace ad {
          */
         ADNumber(const T &value) :
         expression(new Expression<T>()),
-        value(value),
-        // name(std::string("na")),
+        value(value), bounded(false),
+        min_boundary(std::numeric_limits<T>::min()),
+        max_boundary(std::numeric_limits<T>::max()),
+        //         name(std::string("")),
         id(IDGenerator::instance()->next()) {
-
+            this->SetName("");
             Initialize();
         }
 
@@ -181,12 +136,17 @@ namespace ad {
          */
         ADNumber(const T &value, Expression<T>* exp) :
         expression(exp),
-        value(value),
-        // name(std::string("na")),
+        value(value), bounded(false),
+        min_boundary(std::numeric_limits<T>::min()),
+        max_boundary(std::numeric_limits<T>::max()),
+        //         name(std::string("")),
         id(IDGenerator::instance()->next()) {
+            this->SetName("");
+            //            expression->take();
             expression->take();
             expression->SetId(id);
             expression->SetValue(value);
+
         }
 
         /*!
@@ -200,6 +160,9 @@ namespace ad {
         value(value),
         name(name),
         expression(new Expression<T>()),
+        bounded(false),
+        min_boundary(std::numeric_limits<T>::min()),
+        max_boundary(std::numeric_limits<T>::max()),
         id(IDGenerator::instance()->next()) {
 
             Initialize();
@@ -213,7 +176,10 @@ namespace ad {
         ADNumber(const ADNumber& orig) :
         value(orig.value),
         name(orig.name),
-        id(orig.id) {
+        id(orig.id),
+        bounded(orig.bounded),
+        min_boundary(orig.min_boundary),
+        max_boundary(orig.max_boundary) {
 
             expression = Clone(orig.expression);
             expression->take();
@@ -221,7 +187,9 @@ namespace ad {
         }
 
         ADNumber(ExpressionPtr exp) :
-        value(Evaluate(exp)),
+       bounded(false),
+        min_boundary(std::numeric_limits<T>::min()),
+        max_boundary(std::numeric_limits<T>::max()),
         name(exp->GetName()),
         id(IDGenerator::instance()->next()) {
 
@@ -232,12 +200,15 @@ namespace ad {
         }
 
         virtual ~ADNumber() {
-            if(ADNumber<T>::IsRecordingExpression()){
-                 expression->release();
-            }else{
+            if (ADNumber<T>::IsRecordingExpression()) {
+                if(!expression){
+                    std::cout<<"NULL ptr....."<<std::endl;
+                }
+                expression->release();
+            } else {
                 delete this->expression;
             }
-           
+
         }
 
         operator T&() {
@@ -276,10 +247,11 @@ namespace ad {
         ADNumber<T>& operator =(const ADNumber<T> &val) {
             value = val.GetValue();
             if (ADNumber<T>::IsRecordingExpression()) {
+
                 if (this->expression != NULL) {
                     this->expression->release();
                 }
-//                           ExpressionPtr exp = expression;
+                //                           ExpressionPtr exp = expression;
 
                 val.GetExpression()->take();
                 this->id = val.GetID();
@@ -301,24 +273,26 @@ namespace ad {
          */
         ADNumber<T> & operator =(const T & val) {
             value = val;
-            
+
             if (ADNumber<T>::IsRecordingExpression()) {
-            
-                
-                if (expression->GetLeft() != NULL) {
-                    expression->GetLeft()->release();
-                    expression->SetLeft(NULL);
-                }
-                if (expression->GetRight() != NULL) {
-                    expression->GetRight()->release();
-                     expression->SetRight(NULL);
-                }
-                
-                this->expression->release();
+
+
+                //                if (expression->GetLeft() != NULL) {
+                //                    expression->GetLeft()->release();
+                ////                    expression->SetLeft(NULL);
+                //                }
+                //                if (expression->GetRight() != NULL) {
+                //                    expression->GetRight()->release();
+                ////                    expression->SetRight(NULL);
+                //                }
+
+
+                // this->expression->release();
+
                 this->SetValue(value);
                 this->expression = NEW_EXPRESSION(T);
                 this->Initialize();
-                
+
             } else {
                 this->SetValue(value);
             }
@@ -811,7 +785,7 @@ namespace ad {
          * @param rhs
          * @return 
          */
-        ADNumber<T>* operator /=(const T & rhs) {
+        ADNumber<T>& operator /=(const T & rhs) {
 
             ExpressionPtr c = NEW_EXPRESSION(T) ();
             c->SetOp(CONSTANT);
@@ -900,7 +874,7 @@ namespace ad {
             c->SetOp(CONSTANT);
             c->SetValue(T(1.0));
 
-            ExpressionPtr exp = NEW_EXPRESSION(T) (value - 1, id, name, PLUS, expression, c);
+            ExpressionPtr exp = NEW_EXPRESSION(T) (value - 1, id, name, MINUS, expression, c);
             if (expression != NULL) {
                 expression->release();
             }
@@ -939,7 +913,7 @@ namespace ad {
          * @return 
          */
         const std::string GetName() const {
-            if (name == "") {
+            if (name.empty()) {
                 std::stringstream ss;
                 ss << "x" << GetID();
                 return ss.str();
@@ -948,14 +922,53 @@ namespace ad {
         }
 
         void SetName(const std::string &name) {
-
             expression->SetName(name);
             this->name = name;
         }
 
+        bool IsBounded() {
+            return this->bounded;
+        }
+
+        void SetBounds(const T& min, const T& max) {
+            this->bounded = true;
+            this->max_boundary = max;
+            this->min_boundary = min;
+            this->SetValue(this->GetValue());
+        }
+
+        const T GetMinBoundary() {
+            return this->min_boundary;
+        }
+
+        const T GetMaxBoundary() {
+            return this->max_boundary;
+        }
+
         void SetValue(const T &val) {
-            value = val;
-            expression->SetValue(value);
+
+            if (this->bounded) {
+                if (val != val) {//nan
+                    this->value = this->min_boundary + (this->max_boundary - this->min_boundary) / 2.0;
+                    expression->SetValue(value);
+                    return;
+                }
+                if (val<this->min_boundary) {
+                    this->value = this->min_boundary;
+                    expression->SetValue(value);
+                } else if (val>this->max_boundary) {
+                    this->value = this->max_boundary;
+                    expression->SetValue(value);
+                } else {
+                    value = val;
+                    expression->SetValue(value);
+                }
+
+
+            } else {
+                value = val;
+                expression->SetValue(value);
+            }
         }
 
         void Upate() {
@@ -1763,31 +1776,30 @@ namespace ad {
             return ad::Derivative(ret, var20, 1);
         }
 
-//        
-//        /*!
-//         * Returns sqrt(sum a = A,B { (df/da)^2*u(a)^2}), where u(a) is 
-//         * round error.
-//         * 
-//         **/
-//        const T GetUncertainty(const std::vector<ADNumber<T> >&vars) {
-//           
-//    
-//
-//
-//            T temp = T(0);
-//            T squared_epsilon = std::numeric_limits<T>::epsilon() * std::numeric_limits<T>::epsilon();
-//            T dif;
-//            
-//            for(int i =0; i < vars.size(); i++){
-//            
-//                dif = ad::EvaluateDerivative<T>(this->GetExpression(), vars[i].GetID());
-//                temp += dif * dif * squared_epsilon;
-//            }
-//            return std::sqrt(temp);
-//
-//        }
+        //        
+        //        /*!
+        //         * Returns sqrt(sum a = A,B { (df/da)^2*u(a)^2}), where u(a) is 
+        //         * round error.
+        //         * 
+        //         **/
+        //        const T GetUncertainty(const std::vector<ADNumber<T> >&vars) {
+        //           
+        //    
+        //
+        //
+        //            T temp = T(0);
+        //            T squared_epsilon = std::numeric_limits<T>::epsilon() * std::numeric_limits<T>::epsilon();
+        //            T dif;
+        //            
+        //            for(int i =0; i < vars.size(); i++){
+        //            
+        //                dif = ad::EvaluateDerivative<T>(this->GetExpression(), vars[i].GetID());
+        //                temp += dif * dif * squared_epsilon;
+        //            }
+        //            return std::sqrt(temp);
+        //
+        //        }
 
-        
         const T NthPartialValue(const ADNumber<T> &wrt, unsigned int order) {
             return ad::DerivativeValue<T > (*this, wrt, order);
         }
@@ -1871,12 +1883,12 @@ namespace ad {
         void Initialize() {
 
             expression->take();
-            expression->SetLeft(NULL);
-            expression->SetRight(NULL);
+            //            expression->SetLeft(NULL);
+            //            expression->SetRight(NULL);
             expression->SetValue(value);
             expression->SetId(id);
             expression->SetOp(VARIABLE);
-            // expression->SetName(GetName());
+            expression->SetName(GetName());
 
 
         }
@@ -2380,12 +2392,12 @@ namespace ad {
         }
 
         if (order == 1) {
-            return EvaluateDerivative<T > (x.expression, wrt.GetID());
+            return EvaluateDerivative<T > (x.GetExpression(), wrt.GetID());
         }
 
 
 
-        ExpressionPtr exp = Differentiate<T > (x.expression, wrt.GetID());
+        ExpressionPtr exp = Differentiate<T > (x.GetExpression(), wrt.GetID());
         exp->take();
         ExpressionPtr temp;
 
@@ -2421,7 +2433,7 @@ namespace ad {
 
 
         ExpressionPtr exp = Differentiate<T > (x.GetExpression(), wrt.GetID());
-        exp->take();
+//                exp->take();
 
         ExpressionPtr temp;
 
@@ -2431,7 +2443,7 @@ namespace ad {
             for (i = 1; i < order; i++) {
 
                 temp = Differentiate<T > (exp, wrt.GetID());
-                temp->take();
+//                                temp->take();
 
                 exp->release();
                 exp = temp;
@@ -2443,7 +2455,7 @@ namespace ad {
 
         ADNumber<T> ret(exp);
         ret.SetValue(Evaluate(ret.GetExpression()));
-        exp->release();
+//        exp->release();
 
         return ret;
 
@@ -3055,10 +3067,18 @@ namespace std {
     template<class T> const ad::ADNumber<T> pow(const ad::ADNumber<T> &lhs, T rhs) {
         T val = std::pow(lhs.GetValue(), rhs);
         if (ad::ADNumber<T>::IsRecordingExpression()) {
-            return ad::ADNumber<T > (val,
-                    NEW_EXPRESSION(T)(val,
-                    0, ad::POW, lhs.GetExpression(),
-                    NEW_EXPRESSION(T)(rhs, 0, ad::CONSTANT, NULL, NULL)));
+
+            ad::ADNumber<T> ret;
+            ret.SetValue(std::pow(lhs.GetValue(), rhs));
+            ret.GetExpression()->SetOp(ad::POW);
+            ret.GetExpression()->SetLeft(lhs.GetExpression());
+            ret.GetExpression()->SetRight(NEW_EXPRESSION(T)(rhs, 0, ad::CONSTANT, NULL, NULL));
+            return ret;
+            //            
+            //            return ad::ADNumber<T > (val,
+            //                    NEW_EXPRESSION(T)(val,
+            //                    0, ad::POW, lhs.GetExpression(),
+            //                    NEW_EXPRESSION(T)(rhs, 0, ad::CONSTANT, NULL, NULL)));
         } else {
             return ad::ADNumber<T > (val);
         }
@@ -3237,6 +3257,74 @@ namespace std {
         return ret;
     }
 }
+
+
+#ifdef ADNUMBER_MPI_SUPPORT
+
+/**
+ * Message Passing Interface support. Serializes the ADNumber using
+ * ad::Serialize. Sends via char array.
+ * @param x
+ * @param dest
+ * @param tag
+ * @param comm
+ * @return 
+ */
+template<class T>
+int MPI_Send_ADNumber(const ad::ADNumber<T> &x,
+int dest,
+int tag,
+MPI_Comm comm) {
+
+    std::stringstream ss;
+    ad::Serialize<T > (x.expression, ss);
+    int size = ss.str().size();
+
+    int error = MPI_Send(&size, 1, MPI_INT, dest, tag, comm);
+
+    return MPI_Send((void*) ss.str().c_str(), ss.str().size(), MPI_CHAR, dest, tag, comm);
+}
+
+#include <fstream>
+
+/**
+ * Deserializes a char array using ad::Serialize and reconstructs a ADNumber.
+ * 
+ * @param x
+ * @param source
+ * @param tag
+ * @param comm
+ * @param status
+ * @return 
+ */
+template<class T>
+int MPI_Recv_ADNumber(ad::ADNumber<T> &x,
+int source, int tag,
+MPI_Comm comm, MPI_Status *status) {
+    std::stringstream ss;
+    int size = 0;
+
+    MPI_Recv(&size, 1, MPI_INT, source, tag, comm, status);
+
+    char* data = new char[size];
+    int ret = MPI_Recv(data, size, MPI_CHAR, source, tag, comm, status);
+
+    for (int i = 0; i < size; i++) {
+        ss << data[i];
+    }
+
+    ad::Expression<T>* exp = new ad::Expression<T > ();
+    ad::Deserialize<T > (exp, ss);
+
+    delete data;
+    //  std::cout<<exp->ToString();
+
+    x = ad::ADNumber<T > (exp);
+    return ret;
+
+}
+
+#endif
 
 
 #endif	/* ADNUMBER_HPP */
